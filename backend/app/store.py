@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.seed import SEED_ROWS
+from app.seed_code_table import seed_code_tables
 
 
 class Store:
@@ -14,6 +15,8 @@ class Store:
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
+        # 码表版本化专属表（登记/版本快照/清洗领用/归一化记录/运行时模式）
+        seed_code_tables(self._tables)
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)

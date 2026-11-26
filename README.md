@@ -79,5 +79,32 @@ npm run dev
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
 
+## 码表版本化（JSON 条目格式）
+
+旧码表用逗号分隔、等号切分（`CN=中国,US=美国`），业务值自带 `=`/`,`（如 `A=B`）
+时无法判明边界。码表已迁移到带版本号的 JSON 条目格式，能力如下：
+
+- 后端
+  - `app/services/code_table_format.py`：旧格式/JSON 条目解析、迁移与回退判定。
+    无歧义好行继续转换；多等号、缺等号、空值、重复码等坏行进拒收清单，
+    保留原文与原因，绝不静默丢值；特殊字符版本转回旧结构时整体阻断。
+  - `app/services/code_table_service.py` + 路由 `/api/code-tables/*`：
+    登记、迁移报告、发布（不可变完整版本快照，版次独立递增）、版本回滚、
+    运行时模式切换（模拟新版部署/旧版回滚）、清洗领用、归一化、批次复算、
+    拒收条目查询。
+  - 清洗批次按码表编号领用服务端当前发布版次，整版快照复制进批次记录并锁定：
+    发布交接/回滚期间不拼装新旧条目，同批次重复领用返回同一快照。
+  - 旧版应用回滚后，含特殊字符的 JSON 版本领用得到明确阻断回执
+    （`reason=legacy_incompatible_special_chars`）；旧结构兼容版本自动降级为
+    `码=值,码=值` 下发。历史版本原编号保留，旧批次可凭领用记录复算。
+- 前端
+  - 参考数据管理页（`ref_data_mgr`）挂 `RefDataPanel.vue`：登记普通值/特殊值、
+    查看迁移拒收坏行、发布、版本列表与回滚、运行时切换。
+  - 标准化清洗页（`std_cleanse`）挂 `CleansePanel.vue`：按码表编号领取批次码表、
+    阻断回执展示、归一化、历史批次复算、领用记录核查。
+- 测试（后端启动后）：
+  - `.venv/bin/python -m unittest tests.test_code_table_format`（解析器单元测试）
+  - `.venv/bin/python -m unittest tests.test_code_table_e2e`（全链路 HTTP 场景）
+
 领域：数据工程
 子方向：数仓与数据湖

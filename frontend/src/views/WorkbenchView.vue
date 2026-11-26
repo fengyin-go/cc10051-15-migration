@@ -90,6 +90,11 @@
       <span>共 {{ total }} 条{{ meta.name }}记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <!-- 码表版本化专用面板：参考数据管理页承载登记/迁移/发布/回滚 -->
+    <RefDataPanel v-if="moduleKey === 'ref_data_mgr'" />
+    <!-- 清洗页承载码表领用/阻断回执/归一化/历史复算 -->
+    <CleansePanel v-if="moduleKey === 'std_cleanse'" />
   </section>
 </template>
 
@@ -104,6 +109,8 @@ import {
   runAction as applyAction,
 } from '@/api/backend-service'
 import type { EntryRow } from '@/data/types'
+import CleansePanel from '@/views/CleansePanel.vue'
+import RefDataPanel from '@/views/RefDataPanel.vue'
 
 const props = defineProps<{ moduleKey: string }>()
 const meta = moduleMeta(props.moduleKey)
